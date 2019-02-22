@@ -2,12 +2,10 @@ import math
 import numpy as np
 import numpy.random as npr
 import numpy.linalg as npla
-import numpy.polynomial.legendre import npleg
+import numpy.polynomial.legendre as npleg
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib as mpl
-mpl.use('Agg')
-
 from matplotlib import cm
 import matplotlib.pyplot as plt
 
@@ -114,7 +112,9 @@ class VisualGrid:
         if residual_norm_history[-1] < resid_tol:
             lucky_zmax = max(np.max(abs(U)), 1)
             zlim = [-lucky_zmax, lucky_zmax]
-            plot_gridfunction(grid, U, 'Lucky Initial Guess', directory = self._image_dir, filename = 'luckyguess.png', zlim = zlim, saveplot = saveplot, showplot = showplot)
+            plot_gridfunction(grid, U, 'Lucky Initial Guess',
+                directory=self._image_dir, filename='luckyguess.png',
+                zlim=zlim, saveplot=saveplot, showplot=showplot)
 
             print('You provided a close-enough guess with a residual norm of {1:.2e}'.format(residual_norm_history[-1]))
 
@@ -139,7 +139,8 @@ class VisualGrid:
 
                 maxz = max(np.max(np.abs(absolute_error)), 1.0)
                 abserr_zlim = [-maxz, maxz]
-                plot_gridfunction(grid, absolute_error, plot_title, directory = self._err_dir, filename = 'abserror_{0:04d}.png'.format(iterations), zlim = abserr_zlim, saveplot = saveplot, showplot = showplot)
+                plot_gridfunction(grid, absolute_error, plot_title,
+                        directory = self._err_dir, filename = 'abserror_{0:04d}.png'.format(iterations), zlim = abserr_zlim, saveplot = saveplot, showplot = showplot)
 
             # Compute the new residual and add its norm to our history.
             R = compute_residual(self, V, F)
@@ -152,7 +153,8 @@ class VisualGrid:
             # Plot what we will normally have access to: The residuals.
             maxz = max(np.max(np.abs(R)), 1.0)
             residual_zlim = [-maxz, maxz]
-            plot_gridfunction(grid, R, plot_title, directory = self._err_dir, filename = 'residual_{0:04d}.png'.format(iterations), zlim = residual_zlim, saveplot = saveplot, showplot = showplot)
+            plot_gridfunction(grid, R, plot_title,
+                    directory = self._err_dir, filename = 'residual_{0:04d}.png'.format(iterations), zlim = residual_zlim, saveplot = saveplot, showplot = showplot)
 
             # If we fall below the specified residual norm, break.
             if (residual_norm_history[-1] / residual_norm_history[0]) < resid_tol:
@@ -210,101 +212,101 @@ class VisualGrid:
                 l2_err_sq += ( exact_func(x, y) - 0.25 * np.sum(U[i:(i + 2), j:(j + 2)]) )**2
 
         return math.sqrt( l2_err_sq * (self._hx * self._hy) )
-	
+    
     def l2_error_gauss(self, exact_func, U, n = 1):
-	    # Keep track of the square of the L2 error.
+        # Keep track of the square of the L2 error.
         l2_err_sq = 0
-		
-		# Placeholders for the interval endpoints and grid step sizes.
-		x0 = self._x0
-		y0 = self._y0
-		hx = self._hx
-		hy = self._hy
-		
-		# Compute the gauss points and weights on the interval [-1,1],
-		# which give an exact quadrature for polynomials of degree up to
-		# 2n - 1.
-		p, w = npleg.leggauss(n)
 
-		# Loop through the cells of the grid in lexicographic order, starting
-		# from the lower left corner.
+        # Placeholders for the interval endpoints and grid step sizes.
+        x0 = self._x0
+        y0 = self._y0
+        hx = self._hx
+        hy = self._hy
+        
+        # Compute the gauss points and weights on the interval [-1,1],
+        # which give an exact quadrature for polynomials of degree up to
+        # 2n - 1.
+        p, w = npleg.leggauss(n)
+
+        # Loop through the cells of the grid in lexicographic order, starting
+        # from the lower left corner.
         for j in range(self._numy - 1):
             y = y0 + j * hy
-			
-			# Translate the quadrature points to the current y-interval.
-			py = y + 0.5 * hy * (p + 1)
+            
+            # Translate the quadrature points to the current y-interval.
+            py = y + 0.5 * hy * (p + 1)
 
             for i in range(self._numx - 1):
                 x = x0 + i * hx
-				
-				# Translate the quadrature points to the current x-interval.
-				px = x + 0.5 * hx * (p + 1)
-				
-				# Create the bilinear function on this cell.
-				blfunc = bilinear_func(U[i:i+1, j:j+1], hx, hy)
-				
-				# Compute the approximate integral (sans the jacobian determinant)
-				# of the difference between the exact and approximate functions.
-				for m in range(len(px)):
-				    for n in range(len(py)):						
-						l2_err_sq += w[m] * w[n] * (exact_func(px[m], py[n]) - blfunc(px[m], py[n]))**2
+                
+                # Translate the quadrature points to the current x-interval.
+                px = x + 0.5 * hx * (p + 1)
+                
+                # Create the bilinear function on this cell.
+                blfunc = bilinear_func(U[i:i+1, j:j+1], hx, hy)
+                
+                # Compute the approximate integral (sans the jacobian determinant)
+                # of the difference between the exact and approximate functions.
+                for m in range(len(px)):
+                    for n in range(len(py)):                        
+                        l2_err_sq += w[m] * w[n] * (exact_func(px[m], py[n]) - blfunc(px[m], py[n]))**2
 
         return math.sqrt(l2_err_sq * (0.25 * hx * hy))
 
     def l2_norm(self, U, n = 1):
-	    # Keep track of the square of the L2 error.
+        # Keep track of the square of the L2 error.
         l2_norm_sq = 0
-		
-		# Placeholders for the interval endpoints and grid step sizes.
-		x0 = self._x0
-		y0 = self._y0
-		hx = self._hx
-		hy = self._hy
-		
-		# Compute the gauss points and weights on the interval [-1,1],
-		# which give an exact quadrature for polynomials of degree up to
-		# 2n - 1.
-		p, w = npleg.leggauss(n)
+        
+        # Placeholders for the interval endpoints and grid step sizes.
+        x0 = self._x0
+        y0 = self._y0
+        hx = self._hx
+        hy = self._hy
+        
+        # Compute the gauss points and weights on the interval [-1,1],
+        # which give an exact quadrature for polynomials of degree up to
+        # 2n - 1.
+        p, w = npleg.leggauss(n)
 
-		# Loop through the cells of the grid in lexicographic order, starting
-		# from the lower left corner.
+        # Loop through the cells of the grid in lexicographic order, starting
+        # from the lower left corner.
         for j in range(self._numy - 1):
             y = y0 + j * hy
-			
-			# Translate the quadrature points to the current y-interval.
-			py = y + 0.5 * hy * (p + 1)
+            
+            # Translate the quadrature points to the current y-interval.
+            py = y + 0.5 * hy * (p + 1)
 
             for i in range(self._numx - 1):
                 x = x0 + i * hx
-				
-				# Translate the quadrature points to the current x-interval.
-				px = x + 0.5 * hx * (p + 1)
-				
-				# Create the bilinear function on this cell.
-				blfunc = bilinear_func(U[i:i+1, j:j+1], hx, hy)
-				
-				# Compute the approximate integral (sans the jacobian determinant)
-				# of the grid function on the cell.
-				for m in range(len(px)):
-				    for n in range(len(py)):						
-						l2_norm_sq += w[m] * w[n] * blfunc(px[m], py[n])**2
+                
+                # Translate the quadrature points to the current x-interval.
+                px = x + 0.5 * hx * (p + 1)
+                
+                # Create the bilinear function on this cell.
+                blfunc = bilinear_func(U[i:i+2, j:j+2], hx, hy, x, y)
+                
+                # Compute the approximate integral (sans the jacobian determinant)
+                # of the grid function on the cell.
+                for m in range(len(px)):
+                    for n in range(len(py)):                        
+                        l2_norm_sq += w[m] * w[n] * blfunc(px[m], py[n])**2
 
         return math.sqrt(l2_norm_sq * (0.25 * hx * hy))
 
 
-def bilinear_func(U, hx, hy):
-	# Compute the coefficients of the bilinear functions.
-	c = np.zeros(4)
-	
-	c[0] = U[0, 0]
-	c[1] = (U[1, 0] - U[0, 0]) / hx
-	c[2] = (U[0, 1] - U[0, 0]) / hy
-	c[3] = (U[1,1] - U[1,0] - U[0,1] + U[0,0]) / (hx * hy)
-	
-	return lambda x, y : c[0] + \
+def bilinear_func(U, hx, hy, x1, y1):
+    # Compute the coefficients of the bilinear functions.
+    c = np.zeros(4)
+    
+    c[0] = U[0, 0]
+    c[1] = (U[1, 0] - U[0, 0]) / hx
+    c[2] = (U[0, 1] - U[0, 0]) / hy
+    c[3] = (U[1,1] - U[1,0] - U[0,1] + U[0,0]) / (hx * hy)
+    
+    return lambda x, y : c[0] + \
                          c[1] * (x - x1) + \
-	                     c[2] * (y - y1) + \
-						 c[3] * (x - x1) * (y - y1)
+                         c[2] * (y - y1) + \
+                         c[3] * (x - x1) * (y - y1)
 
 
 def visual_vcycle(grid, U, F, saveplot = False, showplot = False):
@@ -461,7 +463,7 @@ def visual_gamma_cycle(grid, U, F, gamma = 1, saveplot = False, showplot = False
     return U
 
 
-def plot_gridfunction(grid, U, plot_title, directory = None, filename = None, zlim = [-1, 1], saveplot = False, showplot = False):
+def plot_gridfunction(grid, U, plot_title, directory = None, filename = None, zlim = [-1, 1], line = None, saveplot = False, showplot = False):
     #---------------------------------------#
     # Create the meshgrid on which to plot. #
     #---------------------------------------#
@@ -492,6 +494,10 @@ def plot_gridfunction(grid, U, plot_title, directory = None, filename = None, zl
 
     if zlim != None:
         axes.set_zlim(zlim)
+
+    if line is not None:
+        axes.plot3D(X[line, :], Y[line, :], U[:, line], linewidth=2.0,
+            color='hotpink')
 
     plt.title(plot_title)
 
@@ -567,7 +573,7 @@ def gauss_seidel(grid, U, F, plot_title, saveplot = False, showplot = False):
             if not plotted:
                 plotted = True
 
-            plot_gridfunction(grid, U, plot_title, directory = grid.image_directory(), saveplot = saveplot, showplot = showplot)
+            plot_gridfunction(grid, U, plot_title, directory = grid.image_directory(), line = j, saveplot = saveplot, showplot = showplot)
 
     if not plotted:
         plot_gridfunction(grid, U, plot_title, directory = grid.image_directory(), saveplot = saveplot, showplot = showplot)
@@ -667,8 +673,9 @@ if __name__ == '__main__':
     def demoexact(x, y): return np.sin(np.pi * x) * np.sin(np.pi * y)
 
     niters = 10
-    resid_tol = 1e-3
+    max_levels = 5
+    resid_tol = 1e-2
     gamma = 1
 
-    grid = VisualGrid(max_levels = 5, rhsf = demorhs)
+    grid = VisualGrid(max_levels = max_levels, rhsf = demorhs)
     grid.run(niters = niters, resid_tol = resid_tol, gamma = gamma, exact = demoexact, zlim = [-1.0, 1.0], saveplot = True)
